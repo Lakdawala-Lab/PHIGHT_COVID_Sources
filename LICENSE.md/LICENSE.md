@@ -1,5 +1,5 @@
-COVID Diary License File
-Lakdawala Lab
+PHIGHT COVID Maps License File
+The Lakdawala Lab at the University of Pittsburgh
 
 Attribution-ShareAlike 4.0 International
 
