@@ -1,0 +1,126 @@
+---
+title: "Undergrad research"
+authors: "Alvin Pan"
+Andrew IDs: "qpan"
+output:
+  pdf_document:
+    toc: no
+  html_document:
+    toc: true
+    toc_float: true
+    theme: spacelab
+---
+```{r}
+library("readxl")
+library(tidyverse)
+```
+
+
+
+```{r}
+covid = data.frame(read_excel("COVID_ALL_G1_data_11242020_public.xlsx"))
+covid.g1 = data.frame(read_excel("JHU_COVID_CASESwPOP_20201004_public.xlsx"))
+```
+
+
+
+unify date syntax
+```{r}
+covid$DATE = as.Date(covid$DATE, "%m-%d-%y")
+covid.g1$DATE = as.Date(covid.g1$DATE, "%m-%d-%y")
+```
+
+
+
+```{r}
+#function to union 2 feature vectors
+combine.attributes <- function(x, y) {
+  n = length(x)
+  for (i in 1:n) {
+    if (is.na(x[i])) {
+      x[i] = y[i]
+    }
+  }
+  return (x)
+}
+```
+
+
+```{r}
+#function to union duplicate features
+clean.combined.data <- function(data, attrs) {
+  for (name in attrs) {
+    data[, name] = combine.attributes(covid.com[, paste(name, ".x", sep="")], covid.com[, paste(name, ".y", sep="")])
+    data[, paste(name, ".x", sep="")] = NULL
+    data[, paste(name, ".y", sep="")] = NULL
+  }
+  return (dplyr::arrange(data, STATE, DATE))
+}
+```
+
+
+
+
+```{r}
+#function to fill the NAs with the most recently observed non-NA for all input features of data frame
+extend.attr <- function(data, features) {
+  n = dim(data)[1]
+  for (feature in features) {
+    xs = rep(0, n)
+    prev.state = NULL
+    curr.x = 0
+    for (i in 1:n) {
+      curr.state = data$STATE[i]
+      if (!(is.na(data[,feature][i]))) {
+        curr.x = data[, feature][i]
+      } else {
+        if (is.null(prev.state) || (curr.state != prev.state)) {
+          curr.x = 0
+          prev.state = curr.state
+        }
+      }
+      xs[i] = curr.x
+    }  
+    data[, feature] = xs
+  }
+  return (data)
+}
+```
+
+
+
+
+```{r}
+# extract top n states with the most people
+top_pop_states <- function(data, n=5) {
+  d = data %>% group_by(STATE) %>% summarize(POPULATION = mean(POPULATION, na.rm = TRUE))
+  return (top_n(d, n=n, wt=POPULATION)[[1]])                          
+}
+```
+
+
+```{r}
+duplicated.attributes = c("STUSAB", "LATITUDE", "LONGITUDE", "STATEFP")
+```
+
+combine 2 data frames
+```{r}
+covid.com = covid %>% full_join(covid.g1, by = c("STATE", "DATE"))
+```
+
+
+Sort data by state and then date
+```{r}
+covid.com = clean.combined.data(covid.com, duplicated.attributes)
+```
+
+
+```{r}
+covid.com = extend.attr(covid.com, c("SCORE"))
+```
+
+
+```{r}
+write.csv(covid.com, "covid.com.csv")
+```
+
