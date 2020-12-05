@@ -48,4 +48,4 @@ if __name__ == "__main__":
         flow.schedule = None
         flow.run(parameters={"min_date": args.min_date})
     elif action == "register":
-        flow.register(project_name="Default")
+        flow.register(project_name="Scraping")
