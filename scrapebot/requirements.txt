@@ -1,0 +1,5 @@
+prefect==0.13.18
+beautifulsoup4==4.9.3
+requests==2.25.0
+spacy==2.3.4
+lxml==4.6.2
