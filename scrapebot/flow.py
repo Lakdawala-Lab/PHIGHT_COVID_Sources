@@ -1,15 +1,19 @@
 import argparse
 import prefect
 from prefect import Flow, Parameter, task, unmapped
-
+from web import get_press_releases
 
 @task
-def scrape(state, state_config, min_date):
+def scrape(state, state_config, min_date, relevant_title_phrases):
     if state not in state_config:
         raise ValueError(f"State {state} was not found in configuration: stopping")
     config = state_config[state]
     logger = prefect.context.get("logger")
     logger.info(f"Running for state {state}")
+
+    prs = get_press_releases(config["url"], min_date, relevant_title_phrases)
+    for pr in prs:
+        logger.info(f"{pr.pubdate} {pr.relevant} {pr.title}")    
 
 
 with Flow("PHIGHTCOVID_ScrapeBot") as flow:
@@ -25,8 +29,9 @@ with Flow("PHIGHTCOVID_ScrapeBot") as flow:
         required=False,
     )
     states_to_run = Parameter("states_to_run", default=["MT"])
+    relevant_title_phrases = Parameter("relevant_title_phrases", default=["covid", "pandemic"])
 
-    result = scrape.map(states_to_run, unmapped(state_config), unmapped(min_date))
+    result = scrape.map(states_to_run, unmapped(state_config), unmapped(min_date), unmapped(relevant_title_phrases))
 
 
 if __name__ == "__main__":

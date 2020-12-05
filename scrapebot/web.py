@@ -15,8 +15,9 @@ class PressRelease:
     relevant: bool = False
 
 
-def get_press_releases(url, min_date):
+def get_press_releases(url, min_date_string, relevant_title_phrases):
     try:
+        min_date = from_format(min_date_string, "YYYY-MM-DD")
         press_release_list = []
         r = requests.get(url)
         soup = BeautifulSoup(r.content, features="html.parser")
@@ -28,7 +29,7 @@ def get_press_releases(url, min_date):
             pubdate = from_format(item.pubdate.text, "ddd, DD MMM YYYY HH:mm:ss z")
             if pubdate < min_date:
                 break
-            print(pubdate, item.title.text)
+            # print(pubdate, item.title.text)
             content = item.find("content:encoded").get_text()
             press_release_list.append(
                 PressRelease(
@@ -39,7 +40,7 @@ def get_press_releases(url, min_date):
                 )
             )
             # print(item.description.text)
-        return press_release_list
+        return filter_for_relevant_press_releases(press_release_list, relevant_title_phrases)
     except Exception as e:
         print("get_press_releases() failed. Exception: ")
         print(e)
@@ -57,8 +58,7 @@ def filter_for_relevant_press_releases(press_release_list, relevant_title_phrase
 if __name__ == "__main__":
     prs = get_press_releases(
         "https://news.mt.gov/Home/rss/category/24469/governors-office",
-        datetime(2020, 11, 1),
+        "2020-11-01", ["covid", "pandemic"]
     )
-    filtered_prs = filter_for_relevant_press_releases(prs, ["covid", "pandemic"])
-    for pr in filtered_prs:
+    for pr in prs:
         print(pr.pubdate, pr.relevant, pr.title)
