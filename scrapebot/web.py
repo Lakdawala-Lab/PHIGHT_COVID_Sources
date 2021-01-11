@@ -1,5 +1,6 @@
 import pendulum
 import requests
+import traceback
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from pendulum import datetime, from_format
@@ -12,6 +13,7 @@ class PressRelease:
     title: str
     pubdate: datetime
     content: str
+    link: str
     relevant: bool = False
 
 
@@ -20,22 +22,23 @@ def get_press_releases(url, min_date_string, relevant_title_phrases):
         min_date = from_format(min_date_string, "YYYY-MM-DD")
         press_release_list = []
         r = requests.get(url)
-        soup = BeautifulSoup(r.content, features="html.parser")
+        soup = BeautifulSoup(r.content, features="xml")  # "html.parser")
         items = soup.findAll("item")
         # print(items[0])
-        # print(items[0].content.text)
+        # print(items[0].pubDate.text)
         # return
         for item in items:
-            pubdate = from_format(item.pubdate.text, "ddd, DD MMM YYYY HH:mm:ss z")
+            pubdate = from_format(item.pubDate.text, "ddd, DD MMM YYYY HH:mm:ss z")
             if pubdate < min_date:
                 break
-            # print(pubdate, item.title.text)
+            # print(pubdate, item.link)
             content = item.find("content:encoded").get_text()
             press_release_list.append(
                 PressRelease(
                     title=item.title.text,
                     pubdate=pubdate,
                     content=content,
+                    link=item.link.text,
                     relevant=False,
                 )
             )
@@ -44,6 +47,7 @@ def get_press_releases(url, min_date_string, relevant_title_phrases):
     except Exception as e:
         print("get_press_releases() failed. Exception: ")
         print(e)
+        traceback.print_exc() 
 
 
 def filter_for_relevant_press_releases(press_release_list, relevant_title_phrases):
