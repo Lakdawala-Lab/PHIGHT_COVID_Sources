@@ -43,11 +43,13 @@ def get_press_releases(url, min_date_string, relevant_title_phrases):
                 )
             )
             # print(item.description.text)
-        return filter_for_relevant_press_releases(press_release_list, relevant_title_phrases)
+        return filter_for_relevant_press_releases(
+            press_release_list, relevant_title_phrases
+        )
     except Exception as e:
         print("get_press_releases() failed. Exception: ")
         print(e)
-        traceback.print_exc() 
+        traceback.print_exc()
 
 
 def filter_for_relevant_press_releases(press_release_list, relevant_title_phrases):
@@ -62,7 +64,8 @@ def filter_for_relevant_press_releases(press_release_list, relevant_title_phrase
 if __name__ == "__main__":
     prs = get_press_releases(
         "https://news.mt.gov/Home/rss/category/24469/governors-office",
-        "2020-11-01", ["covid", "pandemic"]
+        "2020-11-01",
+        ["covid", "pandemic"],
     )
     for pr in prs:
         print(pr.pubdate, pr.relevant, pr.title)
