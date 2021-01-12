@@ -17,10 +17,13 @@ class PressRelease:
     relevant: bool = False
 
 
-def get_press_releases(url, min_date_string, relevant_title_phrases):
+def get_press_releases(config, min_date_string, relevant_title_phrases):
     try:
         min_date = from_format(min_date_string, "YYYY-MM-DD")
         press_release_list = []
+        url = config["url"]
+        pubdate_format = config["pubdateFormat"]
+        content_tag = config["contentTag"]
         r = requests.get(url)
         soup = BeautifulSoup(r.content, features="xml")  # "html.parser")
         items = soup.findAll("item")
@@ -28,11 +31,11 @@ def get_press_releases(url, min_date_string, relevant_title_phrases):
         # print(items[0].pubDate.text)
         # return
         for item in items:
-            pubdate = from_format(item.pubDate.text, "ddd, DD MMM YYYY HH:mm:ss z")
+            pubdate = from_format(item.pubDate.text, pubdate_format)
             if pubdate < min_date:
                 break
             # print(pubdate, item.link)
-            content = item.find("content:encoded").get_text()
+            content = item.find(content_tag).get_text()
             press_release_list.append(
                 PressRelease(
                     title=item.title.text,

@@ -14,7 +14,7 @@ def scrape(state, state_config, min_date, relevant_title_phrases):
     logger = prefect.context.get("logger")
     logger.info(f"Running for state {state}")
 
-    prs = get_press_releases(config["url"], min_date, relevant_title_phrases)
+    prs = get_press_releases(config, min_date, relevant_title_phrases)
     for pr in prs:
         logger.info(f"{pr.pubdate} {pr.relevant} {pr.title}")
 
@@ -28,8 +28,8 @@ def send_email(relevant_prs, email_list, really_send_email):
     text = ""
     for list_for_state in relevant_prs:
         for pr in list_for_state:
-            text += f"{pr.pubdate} {pr.title} {pr.link}\n"
-    logger.info(text)
+            text += f"{str(pr.pubdate)[:10]} {pr.title} {pr.link}\n"
+    logger.info(f"Preparing body of email as:\n{text}")
     api_key = prefect.client.Secret("MAILGUN_API_KEY").get()
     if not really_send_email:
         logger.info(
@@ -58,12 +58,21 @@ with Flow("PHIGHTCOVID_ScrapeBot") as flow:
             "MT": {
                 "url": "https://news.mt.gov/Home/rss/category/24469/governors-office",
                 "type": "RSS",
+                "pubdateFormat": "ddd, DD MMM YYYY HH:mm:ss z",
+                "contentTag": "content:encoded",
                 "class": "sources.MTGovNews",
-            }
+            },
+            "ND": {
+                "url": "https://www.governor.nd.gov/rss/news",
+                "type": "RSS",
+                "pubdateFormat": "ddd, DD MMM YYYY HH:mm:ss ZZ",
+                "contentTag": "description",
+                "class": "sources.MTGovNews",
+            },
         },
         required=False,
     )
-    states_to_run = Parameter("states_to_run", default=["MT"])
+    states_to_run = Parameter("states_to_run", default=["ND"])
     relevant_title_phrases = Parameter(
         "relevant_title_phrases", default=["covid", "pandemic"]
     )
