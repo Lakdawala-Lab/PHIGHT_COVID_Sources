@@ -24,100 +24,7 @@ library("lhs")
 
 
 
-```{r}
-covid = data.frame(read_excel("../data/COVID_CASES.xlsx"))
-covid.g1 = data.frame(read_excel("../data/COVID_ALL_G1.xlsx"))
-```
-
-```{r}
-head(covid)
-```
-
-```{r}
-head(covid.g1)
-```
-
-
-unify date syntax
-```{r}
-covid$DATE = as.Date(covid$DATE)
-```
-
-
-
-
-```{r}
-# covid.g1$DATE = as.Date(parse_date_time(covid.g1$DATE, orders="mdy"))
-covid.g1$DATE = as.Date(covid.g1$DATE, format="%m/%d/%Y")
-
-```
-
-
 ---------Function interfaces
-
-```{r}
-# This function merges two data according to the relevant features(without data cleaning)
-covid.merge <- function(d1, d2, features) {
-  return (d1 %>% full_join(d2, by = features))
-}
-```
-
-```{r}
-#function to union 2 feature vectors
-combine.attributes <- function(x, y) {
-  n = length(x)
-  for (i in 1:n) {
-    if (is.na(x[i])) {
-      x[i] = y[i]
-    }
-  }
-  return (x)
-}
-```
-
-
-```{r}
-#function to union duplicate features, since merging data always outputs duplicated features
-clean.combined.data <- function(data, attrs) {
-  for (name in attrs) {
-    data[, name] = combine.attributes(covid.com[, paste(name, ".x", sep="")], covid.com[, paste(name, ".y", sep="")])
-    data[, paste(name, ".x", sep="")] = NULL
-    data[, paste(name, ".y", sep="")] = NULL
-  }
-  return (dplyr::arrange(data, STATE, DATE))
-}
-```
-
-
-
-
-```{r}
-#function to fill the NAs with the most recently observed non-NA for all input features of data frame
-extend.attr <- function(data, features) {
-  n = dim(data)[1]
-  for (feature in features) {
-    xs = rep(0, n)
-    prev.state = NULL
-    curr.x = 0
-    for (i in 1:n) {
-      curr.state = data$STATE[i]
-      if (!(is.na(data[,feature][i]))) {
-        curr.x = data[, feature][i]
-      } else {
-        if (is.null(prev.state) || (curr.state != prev.state)) {
-          curr.x = 0
-          prev.state = curr.state
-        }
-      }
-      xs[i] = curr.x
-    }  
-    data[, feature] = xs
-  }
-  return (data)
-}
-```
-
-
 
 
 ```{r}
@@ -140,8 +47,6 @@ plot_states <- function(data, states, feature, x=1, y=1) {
   }
 }
 ```
-
-
 
 
 
@@ -258,31 +163,6 @@ plot_smooth_func <- function(data, states, feature, method="spline", x=1, y=3, d
 ---------Function Implementations and Experiments
 
 ```{r}
-duplicated.attributes = c("STUSAB", "LATITUDE", "LONGITUDE", "STATEFP")
-```
-
-
-
-combine 2 data frames
-```{r}
-covid.com = covid.merge(covid, covid.g1, c("STATE", "DATE"))
-```
-
-
-Sort data by state and then date
-```{r}
-covid.com = clean.combined.data(covid.com, duplicated.attributes)
-```
-
-```{r}
-head(covid.com)
-```
-
-```{r}
-covid.com = extend.attr(covid.com, c("SCORE"))
-```
-
-```{r}
 covid.com = data.frame(read.csv("../data/covid.com.csv"))
 covid.com$DATE = as.Date(covid.com$DATE)
 ```
@@ -308,86 +188,4 @@ plot_smooth_func(covid.com, c("PENNSYLVANIA", "WASHINGTON", "CALIFORNIA"), 'NEWC
 ```
 
 
----------below are just random experiments
-
-
-```{r}
-plot(covid.com$DATE, covid.com$SCORE)
-```
-
-
-```{r}
-cont.cols = c(5:11,14:17)
-```
-
-
-
-```{r}
-par(mfrow=c(3,4), mar=c(4,4,2,0.5)) # Setup grid, margins
-for (j in cont.cols) {
-  hist(covid[,j], xlab=colnames(covid)[j],
-       main=paste("Hist of", colnames(covid)[j]),
-       col="lightblue", breaks=20)
-}
-```
-
-
-```{r}
-grouped.df = covid %>% group_by(STATE) %>% summarize(POPULATION = sum(sqrt(POPULATION), na.rm = TRUE), NEWCONFIRMED = sum(log(NEWCONFIRMED+1), na.rm = TRUE), CUMCONFIRMED = sum(log(CUMCONFIRMED+1), na.rm = TRUE), NEWDEATHS=sum(log(NEWDEATHS+1), na.rm = TRUE), CUMDEATHS=sum(log(CUMDEATHS+1), na.rm = TRUE)) %>% data.frame()
-```
-
-```{r}
-grouped.df
-```
-
-
-```{r}
-par(mfrow=c(2,3), mar=c(4,4,2,0.5)) # Setup grid, margins
-for (j in (2:6)) {
-  hist(grouped.df[,j], xlab=colnames(grouped.df)[j],
-       main=paste("Hist of", colnames(grouped.df)[j]),
-       col="lightblue", breaks=20)
-}
-```
-
-
-
-```{r}
-head(covid.com)
-```
-
-
-```{r}
-states = top_pop_states(covid)
-plot_states(covid.com, states, 'SCORE')
-```
-
-```{r}
-matrix(rexp(n), nrow=n)
-```
-
-
-```{r}
-library("GPfit")
-library("lhs")
-n <- 7
-x <- matrix(1:n/7, nrow=n)
-y <- matrix(rnorm(n), nrow=n)
-
-GPmodel <- GP_fit(x, y)
-
-plot(GPmodel)
-```
-
-
-
-
-```{r}
-plot_states(covid, 'NEWCONFIRMED')
-```
-
-
-```{r}
-write.csv(covid.com, "../data/covid.com.csv")
-```
 

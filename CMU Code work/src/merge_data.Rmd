@@ -1,0 +1,156 @@
+---
+title: "Undergrad research"
+authors: "Alvin Pan"
+Andrew IDs: "qpan"
+output:
+  pdf_document:
+    toc: no
+  html_document:
+    toc: true
+    toc_float: true
+    theme: spacelab
+---
+
+---------import library packages and datasets
+
+```{r}
+library("readxl")
+library(tidyverse)
+library(np)
+library(GauPro)
+library("GPfit")
+library("lhs")
+```
+
+
+
+```{r}
+covid = data.frame(read_excel("../data/COVID_CASES.xlsx"))
+covid.g1 = data.frame(read_excel("../data/COVID_ALL_G1.xlsx"))
+```
+
+```{r}
+head(covid)
+```
+
+```{r}
+head(covid.g1)
+```
+
+
+unify date syntax
+```{r}
+covid$DATE = as.Date(covid$DATE)
+```
+
+
+
+
+```{r}
+# covid.g1$DATE = as.Date(parse_date_time(covid.g1$DATE, orders="mdy"))
+covid.g1$DATE = as.Date(covid.g1$DATE, format="%m/%d/%Y")
+
+```
+
+
+---------Function interfaces
+
+```{r}
+# This function merges two data according to the relevant features(without data cleaning)
+covid.merge <- function(d1, d2, features) {
+  return (d1 %>% full_join(d2, by = features))
+}
+```
+
+```{r}
+#function to union 2 feature vectors
+combine.attributes <- function(x, y) {
+  n = length(x)
+  for (i in 1:n) {
+    if (is.na(x[i])) {
+      x[i] = y[i]
+    }
+  }
+  return (x)
+}
+```
+
+
+```{r}
+#function to union duplicate features, since merging data always outputs duplicated features
+clean.combined.data <- function(data, attrs) {
+  for (name in attrs) {
+    data[, name] = combine.attributes(covid.com[, paste(name, ".x", sep="")], covid.com[, paste(name, ".y", sep="")])
+    data[, paste(name, ".x", sep="")] = NULL
+    data[, paste(name, ".y", sep="")] = NULL
+  }
+  return (dplyr::arrange(data, STATE, DATE))
+}
+```
+
+
+
+
+```{r}
+#function to fill the NAs with the most recently observed non-NA for all input features of data frame
+extend.attr <- function(data, features) {
+  n = dim(data)[1]
+  for (feature in features) {
+    xs = rep(0, n)
+    prev.state = NULL
+    curr.x = 0
+    for (i in 1:n) {
+      curr.state = data$STATE[i]
+      if (!(is.na(data[,feature][i]))) {
+        curr.x = data[, feature][i]
+      } else {
+        if (is.null(prev.state) || (curr.state != prev.state)) {
+          curr.x = 0
+          prev.state = curr.state
+        }
+      }
+      xs[i] = curr.x
+    }  
+    data[, feature] = xs
+  }
+  return (data)
+}
+```
+
+
+---------Merge and Save Data Implementations
+
+```{r}
+duplicated.attributes = c("STUSAB", "LATITUDE", "LONGITUDE", "STATEFP")
+```
+
+
+combine 2 data frames
+```{r}
+covid.com = covid.merge(covid, covid.g1, c("STATE", "DATE"))
+```
+
+
+Sort data by state and then date
+```{r}
+covid.com = clean.combined.data(covid.com, duplicated.attributes)
+```
+
+```{r}
+head(covid.com)
+```
+
+```{r}
+covid.com = extend.attr(covid.com, c("SCORE"))
+```
+
+```{r}
+covid.com = data.frame(read.csv("../data/covid.com.csv"))
+covid.com$DATE = as.Date(covid.com$DATE)
+```
+
+
+```{r}
+write.csv(covid.com, "../data/covid.com.csv")
+```
+
