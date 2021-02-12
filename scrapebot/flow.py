@@ -15,10 +15,14 @@ def scrape(state, state_config, min_date, relevant_title_phrases):
     logger.info(f"Running for state {state}")
 
     prs = get_press_releases(config, min_date, relevant_title_phrases)
-    for pr in prs:
-        logger.info(f"{pr.pubdate} {pr.relevant} {pr.title}")
+    if prs:
+        for pr in prs:
+            logger.info(f"{pr.pubdate} {pr.relevant} {pr.title}")
 
-    return [pr for pr in prs if pr.relevant]
+        return [pr for pr in prs if pr.relevant]
+    else:
+        logger.info(f"Did not find any press releases for {state}. Exiting")
+        return []
 
 
 @task
@@ -46,8 +50,7 @@ def send_email(relevant_prs, email_list, really_send_email):
                 "text": text,
             },
         )
-        logger.info(response)
-        return response
+        logger.info(f"Response from mail service: {str(response)}")
 
 
 with Flow("PHIGHTCOVID_ScrapeBot") as flow:
@@ -76,7 +79,7 @@ with Flow("PHIGHTCOVID_ScrapeBot") as flow:
     relevant_title_phrases = Parameter(
         "relevant_title_phrases", default=["covid", "pandemic"]
     )
-    email_list = Parameter("email_list", default=["joe.schmid@gmail.com"])
+    email_list = Parameter("email_list", default=[])
     really_send_email = Parameter("really_send_email", default=False)
 
     relevant_prs = scrape.map(
@@ -86,7 +89,7 @@ with Flow("PHIGHTCOVID_ScrapeBot") as flow:
         unmapped(relevant_title_phrases),
     )
 
-    result = send_email(relevant_prs, email_list, really_send_email)
+    send_email(relevant_prs, email_list, really_send_email)
 
 
 if __name__ == "__main__":
