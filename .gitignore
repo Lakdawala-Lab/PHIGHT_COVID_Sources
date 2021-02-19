@@ -1,0 +1,4 @@
+#Mac OS files to ignore in PHIGHT_COVID_Sources:
+
+#_ds_store
+*.DS_Store 
