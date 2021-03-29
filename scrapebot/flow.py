@@ -5,6 +5,9 @@ import pendulum
 from prefect import Flow, Parameter, task, unmapped
 from web import get_press_releases
 
+# Scraping from other None-RSS websites 
+from scrape_MA import *
+
 
 @task
 def scrape(state, state_config, min_date, relevant_title_phrases):
@@ -26,9 +29,12 @@ def scrape(state, state_config, min_date, relevant_title_phrases):
 
 
 @task
-def send_email(relevant_prs, email_list, really_send_email):
+def send_email(relevant_prs, min_date, email_list, really_send_email):
     logger = prefect.context.get("logger")
     # logger.info(relevant_prs)
+    # Setting the style for email
+    print("&&&&")
+    print(str(min_date))
     text = '''
     <html>
     <head>
@@ -59,6 +65,7 @@ def send_email(relevant_prs, email_list, really_send_email):
     </head>
     <body>
     '''
+    # Scraping from states that have RSS news
     RSS_States = ["Alabama", "Delaware", "DC", "Hawaii", "Kansas", 
                   "Maryland", "Mississippi", "Montana", "New Mexico", 
                   "New York", "North Carolina", "Pennsylvania", 
@@ -83,6 +90,30 @@ def send_email(relevant_prs, email_list, really_send_email):
             '''%(f"{str(pr.pubdate)[:10]}", f"{pr.title}", f"{pr.link}")
         #f"{str(pr.pubdate)[:10]} {pr.title} {pr.link}"
         text += state_table + "</table>"
+
+    # Scraping from states that DO NOT have RSS news
+
+    # Massachusetts
+    text += "<b>" + "Massachusetts" + "</b> <br>"
+    MA_table = '''
+                    <table id = \"customers\">
+                    <tr>
+                        <th>Date</th>
+                        <th>Title</th>
+                        <th>Link</th>
+                    </tr>
+                '''
+
+    MA_news = scrapeMA(str(min_date))
+    for news in MA_news:
+        MA_table += '''
+                <tr>
+                    <td>%s</td>
+                    <td>%s</td>
+                    <td>%s</td>
+                </tr>
+            '''%news
+    text += MA_table + "</table>"
     
     text += '''
             </body>
@@ -246,11 +277,12 @@ with Flow("PHIGHTCOVID_ScrapeBot") as flow:
         required=False,
     )
     states_to_run = Parameter("states_to_run", default=["AL", "DE", "DC", "HI", "KS", "MD", "MS", "MT", "NM", "NY",
-                                                        "NC", "PA", "RI", "UT", "VT"])
+                                                         "NC", "PA", "RI", "UT", "VT"])
+    #states_to_run = Parameter("states_to_run", default=["VT"])
     relevant_title_phrases = Parameter(
         "relevant_title_phrases", default=["covid", "pandemic", "Coronavirus", "covid-19", "vaccines"]
     )
-    email_list = Parameter("email_list", default=['zongyuay@andrew.cmu.edu', 'phightcovid@gmail.com'])
+    email_list = Parameter("email_list", default=['zongyuay@andrew.cmu.edu']) # 'phightcovid@gmail.com'
     really_send_email = Parameter("really_send_email", default=True)
 
     relevant_prs = scrape.map(
@@ -260,7 +292,7 @@ with Flow("PHIGHTCOVID_ScrapeBot") as flow:
         unmapped(relevant_title_phrases),
     )
 
-    send_email(relevant_prs, email_list, really_send_email)
+    send_email(relevant_prs, min_date, email_list, really_send_email)
 
 
 if __name__ == "__main__":
