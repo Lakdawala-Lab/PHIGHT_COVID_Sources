@@ -1,8 +1,10 @@
-# README for PHIGHT COVID Maps
+# README for PHIGHT COVID
 
-Project built by Annika Avery, Seema Lakdawala, Janie French, Gabby Padovani, Elizabeth McGrady, Logan Hellinger, Roma Kerby and Shreya Jyotishi with extra help and support from all other members of the Lakdawala lab at the University of Pittsburgh.
+Project built by researchers from the Lakdawala lab at the University of Pittsburgh and Carnegie Mellon University. 
 
-For any questions or comments please contact Annika Avery at annika.avery@pitt.edu 
+See phightcovid.org for more information. 
+
+For any questions or comments please contact Annika Avery at annika.avery@pitt.edu.  
 
 FYI: PHIGHT COVID Maps used to be called The COVID Diary, therefore, some data in our repository may still be labeled as COVID Diary. 
 

@@ -33,8 +33,6 @@ def send_email(relevant_prs, min_date, email_list, really_send_email):
     logger = prefect.context.get("logger")
     # logger.info(relevant_prs)
     # Setting the style for email
-    print("&&&&")
-    print(str(min_date))
     text = '''
     <html>
     <head>
