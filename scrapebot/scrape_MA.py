@@ -4,9 +4,6 @@ import re
 from datetime import datetime, date
 import pandas
 
-# Year Month Day
-# min_date = '2021-03-10' #datetime(2021, 3, 10, 0, 0)
-
 def scrapeMA(min_date):
     URL = 'https://www.mass.gov/lists/press-releases-related-to-covid-19'
     page = requests.get(URL)

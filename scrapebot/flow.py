@@ -280,7 +280,7 @@ with Flow("PHIGHTCOVID_ScrapeBot") as flow:
     relevant_title_phrases = Parameter(
         "relevant_title_phrases", default=["covid", "pandemic", "Coronavirus", "covid-19", "vaccines"]
     )
-    email_list = Parameter("email_list", default=['zongyuay@andrew.cmu.edu']) # 'phightcovid@gmail.com'
+    email_list = Parameter("email_list", default=['phightcovid@gmail.com'])  
     really_send_email = Parameter("really_send_email", default=True)
 
     relevant_prs = scrape.map(
